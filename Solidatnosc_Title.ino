@@ -18,7 +18,13 @@ unsigned long lastPressMs = 0;
 
 void applyBrightness() {
   brightness = constrain(brightness, 0, 100);
-  ledcWrite(TFT_BL_PIN, (brightness * ((1 << BL_PWM_RES) - 1)) / 100);
+  // PWM duty vs perceived LED brightness is non-linear (eye is far more
+  // sensitive at the low end), so map the linear 0-100% control through a
+  // gamma curve instead of writing the percentage straight to the duty cycle.
+  const float gamma = 2.2f;
+  int maxDuty = (1 << BL_PWM_RES) - 1;
+  int duty = round(pow(brightness / 100.0f, gamma) * maxDuty);
+  ledcWrite(TFT_BL_PIN, duty);
 }
 
 void setup() {
